@@ -10,6 +10,9 @@ var fs = require('fs'),
     errorhandler = require('errorhandler'),
     mongoose = require('mongoose');
 
+    
+    require('./models/User');
+
 var isProduction = process.env.NODE_ENV === 'production';
 
 // Create global app object
