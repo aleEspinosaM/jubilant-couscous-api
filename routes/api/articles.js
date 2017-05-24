@@ -47,25 +47,27 @@ router.get('/:article', auth.optional, function(req, res, next) {
 
 // update article
 router.put('/:article', auth.required, function(req, res, next) {
-  if(req.article._id.toString() === req.payload.id.toString()){
-    if(typeof req.body.article.title !== 'undefined'){
-      req.article.title = req.body.article.title;
-    }
+  User.findById(req.payload.id).then(function(user){
+    if(req.article.author._id.toString() === req.payload.id.toString()){
+      if(typeof req.body.article.title !== 'undefined'){
+        req.article.title = req.body.article.title;
+      }
 
-    if(typeof req.body.article.description !== 'undefined'){
-      req.article.description = req.body.article.description;
-    }
+      if(typeof req.body.article.description !== 'undefined'){
+        req.article.description = req.body.article.description;
+      }
 
-    if(typeof req.body.article.body !== 'undefined'){
-      req.article.body = req.body.article.body;
-    }
+      if(typeof req.body.article.body !== 'undefined'){
+        req.article.body = req.body.article.body;
+      }
 
-    req.article.save().then(function(article){
-      return res.json({article: article.toJSONFor(user)});
-    }).catch(next);
-  } else {
-    return res.send(403);
-  }
+      req.article.save().then(function(article){
+        return res.json({article: article.toJSONFor(user)});
+      }).catch(next);
+    } else {
+      return res.sendStatus(403);
+    }
+  });
 });
 
 // delete article
@@ -79,6 +81,36 @@ router.delete('/:article', auth.required, function(req, res, next) {
       return res.sendStatus(403);
     }
   });
+});
+
+// Favorite an article
+router.post('/:article/favorite', auth.required, function(req, res, next) {
+  var articleId = req.article._id;
+
+  User.findById(req.payload.id).then(function(user){
+    if (!user) { return res.sendStatus(401); }
+
+    return user.favorite(articleId).then(function(){
+      return req.article.updateFavoriteCount().then(function(article){
+        return res.json({article: article.toJSONFor(user)});
+      });
+    });
+  }).catch(next);
+});
+
+// Unfavorite an article
+router.delete('/:article/favorite', auth.required, function(req, res, next) {
+  var articleId = req.article._id;
+
+  User.findById(req.payload.id).then(function (user){
+    if (!user) { return res.sendStatus(401); }
+
+    return user.unfavorite(articleId).then(function(){
+      return req.article.updateFavoriteCount().then(function(article){
+        return res.json({article: article.toJSONFor(user)});
+      });
+    });
+  }).catch(next);
 });
 
 module.exports = router;
